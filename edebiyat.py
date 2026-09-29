@@ -27,7 +27,7 @@ if "dogru_sayisi" not in st.session_state:
 st.title("⚡ ÖSYM Yazım ve Hız Pratiği (.py)")
 st.markdown("Bu Python dosyası Streamlit altyapısıyla çalışır. Kelimelerin **doğru hallerini** sırayla yazarak hızını geliştir.")
 
-# Süre Seçimi (Görsel olarak Coderspace tarzı)
+# Süre Seçimi
 secilen_sure = st.selectbox("Süre Seçin:", [15, 30, 60, 120, 180], index=1)
 
 # Akacak Kelimeler
@@ -46,7 +46,7 @@ with st.form(key="python_kod_formu", clear_on_submit=True):
         if kullanici_girdisi.strip().lower() == hedef_kelime:
             st.success(f"🎉 Harika! '{hedef_kelime}' doğru.")
             st.session_state.dogru_sayisi += 1
-            st.session_state.kelime_listesi.pop(0) # Bilinen kelimeyi listeden at
+            st.session_state.kelime_listesi.pop(0)
         else:
             st.error(f"❌ Yanlış! Doğrusu **{hedef_kelime}** olacaktı.")
             st.session_state.kelime_listesi.pop(0)
@@ -58,7 +58,7 @@ with st.form(key="python_kod_formu", clear_on_submit=True):
         
         st.rerun()
 
-st.markdown(---)
+st.markdown("---")
 st.metric("Doğru Bilinen Kelime", st.session_state.dogru_sayisi)
 
 if st.button("Listeyi Yenile / Sıfırla"):
