@@ -3,89 +3,115 @@ import random
 
 # Sayfa Yapılandırması
 st.set_page_config(
-    page_title="Yazım ve Noktalama Pratik Stüdyosu",
-    page_icon="✍️",
+    page_title="ÖSYM Hız ve Yazım Pratiği (Coderspace Modu)",
+    page_icon="⚡",
     layout="centered"
 )
 
-# Oturum Durumu (State) Tanımlamaları
-if "yazim_skor" not in st.session_state:
-    st.session_state.yazim_skor = 0
-if "yazim_soru_index" not in st.session_state:
-    st.session_state.yazim_soru_index = 0
-if "aktif_yazim_sorusu" not in st.session_state:
-    st.session_state.aktif_yazim_sorusu = None
-
-# Örnek Veri Tabanı (Yazım Yanlışları & Doğruları)
-yazim_sorulari = [
-    {"soru": "herkes", "yanlis": "herkez", "ipucu": "Sonsuz ünsüzlerden 's' ile biter."},
-    {"soru": "yalnız", "yanlis": "yanlız", "ipucu": "Yalın kelimesinden türemiştir."},
-    {"soru": "yanlış", "yanlis": "yalnış", "ipucu": "Yanılmak kelimesinden türemiştir."},
-    {"soru": "doküman", "yanlis": "doküman", "ipucu": "Fransızcadan gelen kelimelerde 'k' kullanılır."},
-    {"soru": "birçok", "yanlis": "bir çok", "ipucu": "Bitişik yazılır."},
-    {"soru": "herhangi", "yanlis": "her hangi", "ipucu": "Bitişik yazılır."}
+# ÖSYM'de En Çok Çıkan / Karıştırılan Genişletilmiş Kelime Havuzu
+osym_kelimeler = [
+    {"dogru": "yalnız", "yanlis": "yanlız", "ipucu": "Yalın kelimesinden türemiştir."},
+    {"dogru": "yanlış", "yanlis": "yalnış", "ipucu": "Yanılmak kelimesinden türemiştir."},
+    {"dogru": "herkes", "yanlis": "herkez", "ipucu": "Sonsuz ünsüzlerden 's' ile biter."},
+    {"dogru": "unvan", "yanlis": "üvan", "ipucu": "Başında 'n' harfi vardır."},
+    {"dogru": "orijinal", "yanlis": "orjinal", "ipucu": "Araya 'i' harfi girer."},
+    {"dogru": "kılavuz", "yanlis": "klavuz", "ipucu": "Arasında 'ı' harfi bulunur."},
+    {"dogru": "şoför", "yanlis": "şöför", "ipucu": "Fransızcadan gelir, 'ö' ile yazılır."},
+    {"dogru": "stajyer", "yanlis": "stajor", "ipucu": "Sonu '-yer' ile biter."},
+    {"dogru": "laboratuvar", "yanlis": "laboratuar", "ipucu": "İçinde iki tane 'a' vardır."},
+    {"dogru": "doküman", "yanlis": "döküman", "ipucu": "İlk harf düzdür ('doküman')."},
+    {"dogru": "palyaço", "yanlis": "palyanço", "ipucu": "Doğrusu palyaçodur ('n' harfi yok)."},
+    {"dogru": "akaryakıt", "yanlis": "akar yakıt", "ipucu": "Bitişik yazılır."},
+    {"dogru": "birdenbire", "yanlis": "birden bire", "ipucu": "Bitişik yazılır."},
+    {"dogru": "birkaç", "yanlis": "bir kaç", "ipucu": "Bitişik yazılır."},
+    {"dogru": "pekçok", "yanlis": "pek çok", "ipucu": "Yazımına dikkat, genelde ayrı sanılır ama birleşik/ayrı kullanımına dikkat (pek çok ayrı yazılır, birçok bitişik). Doğrusu: pek çok / birçok."},
+    {"dogru": "unvan", "yanlis": " ünvan", "ipucu": "Başında 'u' değil 'ü' değil, direkt unvan."},
+    {"dogru": "hapishane", "yanlis": te "haphane", "ipucu": "Araya 'is' sesi girer."},
+    {"dogru": "karpuz", "yanlis": "kabruz", "ipucu": "Sıralamaya dikkat."},
+    {"dogru": "komite", "yanlis": "komit", "ipucu": "Sonu -e ile biter."},
+    {"dogru": "unutkan", "yanlis": "unutgan", "ipucu": "Sert ünsüz uyumuna dikkat (-kan)."},
+    {"dogru": "özgün", "yanlis": "öçgün", "ipucu": "Özgün (orijinal anlamında)."},
+    {"dogru": "esrar", "yanlis": "israr", "ipucu": "Israr (diretme), esrar (gizli şey) farklıdır."},
+    {"dogru": "kiprik", "yanlis": "kirpik", "ipucu": "Doğrusu 'kirpik'tir (p-r yer değiştirebilir tuzağına dikkat, kirpik düzdür)."},
+    {"dogru": "poğaça", "yanlis": "pohça", "ipucu": "Yumuşak g (ğ) içerir."},
+    {"dogru": "savrulmak", "yanlis": "savurmak", "ipucu": "Araya 'l' harfi alır."},
+    {"dogru": "şehrazat", "yanlis": "şehrizat", "ipucu": "Orta hecesi a ile."}
 ]
 
-# Örnek Veri Tabanı (Noktalama İşaretleri)
-noktalama_sorulari = [
-    {"cumle": "Ankara'ya yarın gideceğim", "dogru": "Ankara'ya yarın gideceğim.", "aciklama": "Özel isimlere gelen ekler kesme işaretiyle ayrılır ve cümlenin sonuna nokta konur."},
-    {"cumle": "Kitabını, defterini ve kalemini aldı", "dogru": "Kitabını, defterini ve kalemini aldı.", "aciklama": "Eş görevli kelimeler arasına virgül konur."},
-    {"cumle": "Eyvah, geç kaldım", "dogru": "Eyvah, geç kaldım!", "aciklama": "Ünlem bildiren kelimelerden sonra virgül, cümlenin sonuna ünlem konur."}
-]
+# Oturum Durumu Yönetimi
+if "oyun_aktif" not in st.session_state:
+    st.session_state.oyun_aktif = False
+if "dogru_sayisi" not in st.session_state:
+    st.session_state.dogru_sayisi = 0
+if "toplam_deneme" not in st.session_state:
+    st.session_state.toplam_deneme = 0
+if "aktif_kelime" not in st.session_state:
+    st.session_state.aktif_kelime = random.choice(osym_kelimeler)
 
-# Başlık
-st.title("✍️ Yazım ve Noktalama Pratik Stüdyosu")
-st.write("Coderspace tarzı interaktif pratik yapma platformuna hoş geldin!")
+st.title("⚡ ÖSYM Yazım Hızı Pratiği (Coderspace Modu)")
+st.markdown("Süreye karşı yarışarak ÖSYM'nin en çok tuzağa düşürdüğü kelimelerin **doğru yazılışlarını** seri bir şekilde yaz.")
 
-# Sekme Yapısı (Tabs)
-tab1, tab2 = st.tabs(["✏️ Yazım Kuralları Pratiği", "📌 Noktalama İşaretleri Pratiği"])
+# --- KONTROL PANELİ (Süre Seçimi ve Başlatma) ---
+col_s1, col_s2 = st.columns([2, 1])
 
-# ----------------- 1. SEKME: YAZIM KURALLARI -----------------
-with tab1:
-    st.header("Yazım Yanlışları Pratiği")
+with col_s1:
+    secilen_sure = st.selectbox(
+        "⏱️ Pratik Süresini Seçin (Saniye):",
+        [14, 30, 60, 120, 180],
+        index=1  # Varsayılan 30 saniye
+    )
+
+with col_s2:
+    st.write("")
+    st.write("")
+    baslat_btn = st.button("🚀 Pratiği Başlat", type="primary")
+
+if baslat_btn:
+    st.session_state.oyun_aktif = True
+    st.session_state.dogru_sayisi = 0
+    st.session_state.toplam_deneme = 0
+    # Her başlatmada tamamen rastgele yeni bir kelime seçilir
+    st.session_state.aktif_kelime = random.choice(osym_kelimeler)
+    st.rerun()
+
+# --- OYUN / PRATİK ALANI ---
+if st.session_state.oyun_aktif:
+    st.markdown("---")
+    st.info(f"Seçilen Süre: **{secilen_sure} Saniye** | Seri bir şekilde kelimelerin DOĞRU halini yazıp Enter'a bas!")
     
-    # Süre seçimi (Görsel simülasyon veya bilgi amaçlı)
-    sure = st.selectbox("Süre Seçimi:", [30, 60, 90], key="yazim_suresi")
+    kelime_datasi = st.session_state.aktif_kelime
     
-    if st.button("Yeni Soru Getir / Başlat", key="btn_yazim_baslat"):
-        st.session_state.aktif_yazim_sorusu = random.choice(yazim_sorulari)
-        st.rerun()
+    # Coderspace tarzı büyük ve dikkat çekici yanlış gösterimi
+    st.markdown(f"### Karıştırılan / Yanlış Hali:")
+    st.error(f"## ❌ {kelime_datasi['yanlis'].upper()}")
+    st.caption(f"💡 İpucu: {kelime_datasi['ipucu']}")
 
-    if st.session_state.aktif_yazim_sorusu:
-        soru_datasi = st.session_state.aktif_yazim_sorusu
-        st.info(f"**Yanlış Yazılışı:** {soru_datasi['yanlis']}")
-        st.caption(f"💡 İpucu: {soru_datasi['ipucu']}")
-        
-        kullanici_cevabi = st.text_input("Kelimenin DOĞRU halini yazın:", key="yazim_input")
-        
-        if st.button("Kontrol Et", key="btn_yazim_kontrol"):
-            if kullanici_cevabi.strip().lower() == soru_datasi["soru"]:
-                st.success("🎉 Doğru! Harika gidiyorsun.")
-                st.session_state.yazim_skor += 1
+    # Form kullanarak Enter tuşuna basıldığında hızlı akış sağlanması
+    with st.form(key="hizli_yazma_formu", clear_on_submit=True):
+        kullanici_girdisi = st.text_input("Kelimenin DOĞRU halini yazın ve Enter'a basın:", placeholder="Buraya yazıp enterla...")
+        gonder = st.form_submit_button("Gönder / Sonraki")
+
+        if gonder:
+            st.session_state.toplam_deneme += 1
+            if kullanici_girdisi.strip().lower() == kelime_datasi["dogru"]:
+                st.session_state.dogru_sayisi += 1
+                st.success("Doğru! 🎯")
             else:
-                st.error(f"❌ Yanlış. Doğrusu: **{soru_datasi['soru']}** olmalıydı.")
-        
-        st.write(f"🏆 Toplam Doğru Sayısı: {st.session_state.yazim_skor}")
-
-# ----------------- 2. SEKME: NOKTALAMA İŞARETLERİ -----------------
-with tab2:
-    st.header("Noktalama İşaretleri Pratiği")
-    st.write("Aşağıdaki eksik noktalı cümleyi uygun noktalama işaretlerini ekleyerek yeniden yazın:")
-    
-    if "aktif_nokta" not in st.session_state:
-        st.session_state.aktif_nokta = random.choice(noktalama_sorulari)
-
-    nokta_datasi = st.session_state.aktif_nokta
-    st.warning(f"Cümle: **{nokta_datasi['cumle']}**")
-    
-    kullanici_nokta = st.text_input("Doğru halini buraya yazın:", key="nokta_input")
-    
-    if st.button("Noktalamayı Kontrol Et", key="btn_nokta_kontrol"):
-        if kullanici_nokta.strip() == nokta_datasi["dogru"]:
-            st.success("✅ Mükemmel! Noktalama kurallarını tam uyguladın.")
-        else:
-            st.info(f"💡 İpucu / Örnek Doğru Hali: {nokta_datasi['dogru']} ({nokta_datasi['aciklama']})")
+                st.warning(f"Yanlıştı! Doğrusu: **{kelime_datasi['dogru']}** olacaktı.")
             
-    if st.button("Sonraki Soruya Geç", key="btn_nokta_degistir"):
-        st.session_state.aktif_nokta = random.choice(noktalama_sorulari)
+            # Her gönderimden sonra havuzdan rastgele başka bir kelime getir
+            st.session_state.aktif_kelime = random.choice(osym_kelimeler)
+            st.rerun()
+
+    # Skor Tablosu
+    st.markdown("---")
+    col_m1, col_m2 = st.columns(2)
+    col_m1.metric("Toplam Kelime", st.session_state.toplam_deneme)
+    col_m2.metric("Doğru Bilinen", st.session_state.dogru_sayisi)
+
+    if st.button("Pratiği Bitir / Sıfırla"):
+        st.session_state.oyun_aktif = False
         st.rerun()
+else:
+    st.markdown("---")
+    st.warning("Pratiğe başlamak için yukarıdan süreyi seçip **'Pratiği Başlat'** butonuna tıkla!")
