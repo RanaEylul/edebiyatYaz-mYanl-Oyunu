@@ -1,163 +1,91 @@
-import tkinter as tk
-from tkinter import ttk, messagebox
+import streamlit as st
 import random
 
-class PratikUygulamasi:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Yazım ve Noktalama Pratik Stüdyosu")
-        self.root.geometry("750x550")
-        self.root.config(bg="#f4f6f9")
+# Sayfa Yapılandırması
+st.set_page_config(
+    page_title="Yazım ve Noktalama Pratik Stüdyosu",
+    page_icon="✍️",
+    layout="centered"
+)
 
-        # Örnek Veri Tabanı (Yazım Yanlışları & Doğruları)
-        self.yazim_sorulari = [
-            {"soru": "herkes", "yanlis": "herkez", "ipucu": "Sonsuz ünsüzlerden 's' ile biter."},
-            {"soru": "yalnız", "yanlis": "yanlız", "ipucu": " Yalın kelimesinden türemiştir."},
-            {"soru": "yanlış", "yanlis": "yalnış", "ipucu": "Yanılmak kelimesinden türemiştir."},
-            {"soru": "doküman", "yanlis": "doküman", "ipucu": "Fransızcadan gelen kelimelerde 'k' kullanılır."},
-            {"soru": "birçok", "yanlis": "bir çok", "ipucu": "Bitişik yazılır."},
-            {"soru": "herhangi", "yanlis": "her hangi", "ipucu": "Bitişik yazılır."}
-        ]
+# Oturum Durumu (State) Tanımlamaları
+if "yazim_skor" not in st.session_state:
+    st.session_state.yazim_skor = 0
+if "yazim_soru_index" not in st.session_state:
+    st.session_state.yazim_soru_index = 0
+if "aktif_yazim_sorusu" not in st.session_state:
+    st.session_state.aktif_yazim_sorusu = None
 
-        # Örnek Veri Tabanı (Noktalama İşaretleri)
-        self.noktalama_sorulari = [
-            {"cumle": "Ankara'ya yarın gideceğim", "aciklama": "Özel isimlere gelen ekler kesme işaretiyle ayrılır."},
-            {"cumle": "Kitabını, defterini ve kalemini aldı.", "aciklama": "Eş görevli kelimeler arasına virgül konur."},
-            {"cumle": "Eyvah, geç kaldım!", "aciklama": "Ünlem bildiren kelimelerden sonra virgül, cümlenin sonuna ünlem konur."}
-        ]
+# Örnek Veri Tabanı (Yazım Yanlışları & Doğruları)
+yazim_sorulari = [
+    {"soru": "herkes", "yanlis": "herkez", "ipucu": "Sonsuz ünsüzlerden 's' ile biter."},
+    {"soru": "yalnız", "yanlis": "yanlız", "ipucu": "Yalın kelimesinden türemiştir."},
+    {"soru": "yanlış", "yanlis": "yalnış", "ipucu": "Yanılmak kelimesinden türemiştir."},
+    {"soru": "doküman", "yanlis": "doküman", "ipucu": "Fransızcadan gelen kelimelerde 'k' kullanılır."},
+    {"soru": "birçok", "yanlis": "bir çok", "ipucu": "Bitişik yazılır."},
+    {"soru": "herhangi", "yanlis": "her hangi", "ipucu": "Bitişik yazılır."}
+]
 
-        self.secilen_sure = 30  # Varsayılan süre
-        self.kalan_sure = 30
-        self.timer_aktif = False
+# Örnek Veri Tabanı (Noktalama İşaretleri)
+noktalama_sorulari = [
+    {"cumle": "Ankara'ya yarın gideceğim", "dogru": "Ankara'ya yarın gideceğim.", "aciklama": "Özel isimlere gelen ekler kesme işaretiyle ayrılır ve cümlenin sonuna nokta konur."},
+    {"cumle": "Kitabını, defterini ve kalemini aldı", "dogru": "Kitabını, defterini ve kalemini aldı.", "aciklama": "Eş görevli kelimeler arasına virgül konur."},
+    {"cumle": "Eyvah, geç kaldım", "dogru": "Eyvah, geç kaldım!", "aciklama": "Ünlem bildiren kelimelerden sonra virgül, cümlenin sonuna ünlem konur."}
+]
 
-        # Sekme Yapısı (Notebook)
-        self.notebook = ttk.Notebook(root)
-        self.notebook.pack(fill="both", expand=True, padx=10, pady=10)
+# Başlık
+st.title("✍️ Yazım ve Noktalama Pratik Stüdyosu")
+st.write("Coderspace tarzı interaktif pratik yapma platformuna hoş geldin!")
 
-        # Sekmeler
-        self.tab_yazim = ttk.Frame(self.notebook)
-        self.tab_noktalama = ttk.Frame(self.notebook)
+# Sekme Yapısı (Tabs)
+tab1, tab2 = st.tabs(["✏️ Yazım Kuralları Pratiği", "📌 Noktalama İşaretleri Pratiği"])
 
-        self.notebook.add(self.tab_yazim, text="✏️ Yazım Kuralları Pratiği")
-        self.notebook.add(self.tab_noktalama, text="📌 Noktalama İşaretleri Pratiği")
+# ----------------- 1. SEKME: YAZIM KURALLARI -----------------
+with tab1:
+    st.header("Yazım Yanlışları Pratiği")
+    
+    # Süre seçimi (Görsel simülasyon veya bilgi amaçlı)
+    sure = st.selectbox("Süre Seçimi:", [30, 60, 90], key="yazim_suresi")
+    
+    if st.button("Yeni Soru Getir / Başlat", key="btn_yazim_baslat"):
+        st.session_state.aktif_yazim_sorusu = random.choice(yazim_sorulari)
+        st.rerun()
 
-        self.ArayuzYazimOlustur()
-        self.ArayuzNoktalamaOlustur()
-
-    def ArayuzYazimOlustur(self):
-        # Başlık
-        lbl_baslik = tk.Label(self.tab_yazim, text="Yazım Yanlışları Pratiği", font=("Arial", 16, "bold"), bg="#f4f6f9", fg="#333")
-        lbl_baslik.pack(pady=15)
-
-        # Süre Seçimi
-        frame_sure = tk.Frame(self.tab_yazim, bg="#f4f6f9")
-        frame_sure.pack(pady=5)
-        tk.Label(frame_sure, text="Süre Seçin: ", font=("Arial", 11), bg="#f4f6f9").pack(side=tk.LEFT)
+    if st.session_state.aktif_yazim_sorusu:
+        soru_datasi = st.session_state.aktif_yazim_sorusu
+        st.info(f"**Yanlış Yazılışı:** {soru_datasi['yanlis']}")
+        st.caption(f"💡 İpucu: {soru_datasi['ipucu']}")
         
-        self.sure_var = tk.StringVar(value="30")
-        for s in ["30", "60", "90"]:
-            rb = tk.Radiobutton(frame_sure, text=f"{s} Saniye", variable=self.sure_var, value=s, command=self.SureGuncelle, bg="#f4f6f9")
-            rb.pack(side=tk.LEFT, padx=5)
-
-        self.lbl_timer = tk.Label(self.tab_yazim, text="Kalan Süre: 30 sn", font=("Arial", 12, "bold"), fg="#e74c3c", bg="#f4f6f9")
-        self.lbl_timer.pack(pady=5)
-
-        # Soru Alanı
-        self.lbl_soru_gosterge = tk.Label(self.tab_yazim, text="Kelimenin DOĞRU halini yazın:", font=("Arial", 12), bg="#f4f6f9")
-        self.lbl_soru_gosterge.pack(pady=10)
-
-        self.lbl_kelime = tk.Label(self.tab_yazim, text="", font=("Arial", 22, "bold"), fg="#2980b9", bg="#f4f6f9")
-        self.lbl_kelime.pack(pady=10)
-
-        # Giriş Kutusu
-        self.entry_yazim = tk.Entry(self.tab_yazim, font=("Arial", 16), justify="center", width=25)
-        self.entry_yazim.pack(pady=10)
-        self.entry_yazim.bind("<Return>", self.YazimKontrolEt)
-
-        # Başlat Butonu
-        self.btn_baslat = tk.Button(self.tab_yazim, text="Pratiği Başlat", font=("Arial", 12, "bold"), bg="#2ecc71", fg="white", padx=15, pady=5, command=self.YazimPratikBaslat)
-        self.btn_baslat.pack(pady=15)
-
-        self.lbl_yazim_sonuc = tk.Label(self.tab_yazim, text="", font=("Arial", 12), bg="#f4f6f9")
-        self.lbl_yazim_sonuc.pack(pady=5)
-
-    def ArayuzNoktalamaOlustur(self):
-        # Başlık
-        lbl_baslik = tk.Label(self.tab_noktalama, text="Noktalama İşaretleri Pratiği", font=("Arial", 16, "bold"), bg="#f4f6f9", fg="#333")
-        lbl_baslik.pack(pady=15)
-
-        tk.Label(self.tab_noktalama, text="Aşağıdaki cümleyi doğru noktalama işaretleriyle tekrar yazın:", font=("Arial", 12), bg="#f4f6f9").pack(pady=10)
-
-        self.lbl_nokta_cumle = tk.Label(self.tab_noktalama, text="Cümle buraya gelecek...", font=("Arial", 14, "italic"), fg="#8e44ad", bg="#f4f6f9")
-        self.lbl_nokta_cumle.pack(pady=10)
-
-        self.entry_nokta = tk.Entry(self.tab_noktalama, font=("Arial", 14), width=45)
-        self.entry_nokta.pack(pady=10)
-
-        btn_nokta_kontrol = tk.Button(self.tab_noktalama, text="Kontrol Et", font=("Arial", 12, "bold"), bg="#3498db", fg="white", padx=15, pady=5, command=self.NoktalamayiKontrolEt)
-        btn_nokta_kontrol.pack(pady=15)
-
-        self.lbl_nokta_sonuc = tk.Label(self.tab_noktalama, text="", font=("Arial", 12), bg="#f4f6f9")
-        self.lbl_nokta_sonuc.pack(pady=5)
-
-        self.YeniNoktalamaSorusuGetir()
-
-    def SureGuncelle(self):
-        self.secilen_sure = int(self.sure_var.get())
-        self.kalan_sure = self.secilen_sure
-        self.lbl_timer.config(text=f"Kalan Süre: {self.kalan_sure} sn")
-
-    def YazimPratikBaslat(self):
-        self.SureGuncelle()
-        self.timer_aktif = True
-        self.YeniYazimSorusuGetir()
-        self.btn_baslat.config(state=tk.DISABLED)
-        self.GeriSayimBaslat()
-
-    def GeriSayimBaslat(self):
-        if self.timer_aktif and self.kalan_sure > 0:
-            self.kalan_sure -= 1
-            self.lbl_timer.config(text=f"Kalan Süre: {self.kalan_sure} sn")
-            self.root.after(1000, self.GeriSayimBaslat)
-        elif self.kalan_sure == 0 and self.timer_aktif:
-            self.timer_aktif = False
-            self.btn_baslat.config(state=tk.NORMAL)
-            messagebox.showinfo("Süre Bitti", "Pratik süreniz tamamlandı! Tebrikler.")
-
-    def YeniYazimSorusuGetir(self):
-        secim = random.choice(self.yazim_sorulari)
-        self.aktif_dogru_kelime = secim["soru"]
-        # Ekrana yanlış yazılışını veya ipucunu yansıtarak doğrusunu isteyelim
-        self.lbl_kelime.config(text=f"Yanlış Hali: {secim['yanlis']} (İpucu: {secim['ipucu']})")
-        self.entry_yazim.delete(0, tk.END)
-
-    def YazimKontrolEt(self, event=None):
-        if not self.timer_aktif:
-            return
+        kullanici_cevabi = st.text_input("Kelimenin DOĞRU halini yazın:", key="yazim_input")
         
-        kullanici_cevabi = self.entry_yazim.get().strip().lower()
-        if kullanici_cevabi == self.aktif_dogru_kelime:
-            self.lbl_yazim_sonuc.config(text="✅ Doğru!", fg="green")
+        if st.button("Kontrol Et", key="btn_yazim_kontrol"):
+            if kullanici_cevabi.strip().lower() == soru_datasi["soru"]:
+                st.success("🎉 Doğru! Harika gidiyorsun.")
+                st.session_state.yazim_skor += 1
+            else:
+                st.error(f"❌ Yanlış. Doğrusu: **{soru_datasi['soru']}** olmalıydı.")
+        
+        st.write(f"🏆 Toplam Doğru Sayısı: {st.session_state.yazim_skor}")
+
+# ----------------- 2. SEKME: NOKTALAMA İŞARETLERİ -----------------
+with tab2:
+    st.header("Noktalama İşaretleri Pratiği")
+    st.write("Aşağıdaki eksik noktalı cümleyi uygun noktalama işaretlerini ekleyerek yeniden yazın:")
+    
+    if "aktif_nokta" not in st.session_state:
+        st.session_state.aktif_nokta = random.choice(noktalama_sorulari)
+
+    nokta_datasi = st.session_state.aktif_nokta
+    st.warning(f"Cümle: **{nokta_datasi['cumle']}**")
+    
+    kullanici_nokta = st.text_input("Doğru halini buraya yazın:", key="nokta_input")
+    
+    if st.button("Noktalamayı Kontrol Et", key="btn_nokta_kontrol"):
+        if kullanici_nokta.strip() == nokta_datasi["dogru"]:
+            st.success("✅ Mükemmel! Noktalama kurallarını tam uyguladın.")
         else:
-            self.lbl_yazim_sonuc.config(text=f"❌ Yanlış! Doğrusu: {self.aktif_dogru_kelime}", fg="red")
-        
-        self.YeniYazimSorusuGetir()
-
-    def YeniNoktalamaSorusuGetir(self):
-        self.aktif_nokta_soru = random.choice(self.noktalama_sorulari)
-        self.lbl_nokta_cumle.config(text=self.aktif_nokta_soru["cumle"])
-        self.entry_nokta.delete(0, tk.END)
-
-    def NoktalamayiKontrolEt(self):
-        # Basit bir kontrol simülasyonu
-        kullanici_cevabi = self.entry_nokta.get().strip()
-        if len(kullanici_cevabi) > 5:
-            self.lbl_nokta_sonuc.config(text="🎉 Harika, noktalama kurallarına dikkat ettin!", fg="green")
-            self.root.after(1500, self.YeniNoktalamaSorusuGetir)
-        else:
-            self.lbl_nokta_sonuc.config(text="⚠️ Lütfen eksiksiz bir şekilde yazmayı dene.", fg="orange")
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = PratikUygulamasi(root)
-    root.mainloop()
+            st.info(f"💡 İpucu / Örnek Doğru Hali: {nokta_datasi['dogru']} ({nokta_datasi['aciklama']})")
+            
+    if st.button("Sonraki Soruya Geç", key="btn_nokta_degistir"):
+        st.session_state.aktif_nokta = random.choice(noktalama_sorulari)
+        st.rerun()
