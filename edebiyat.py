@@ -24,15 +24,13 @@ osym_kelimeler = [
     {"dogru": "akaryakıt", "yanlis": "akar yakıt", "ipucu": "Bitişik yazılır."},
     {"dogru": "birdenbire", "yanlis": "birden bire", "ipucu": "Bitişik yazılır."},
     {"dogru": "birkaç", "yanlis": "bir kaç", "ipucu": "Bitişik yazılır."},
-    {"dogru": "pekçok", "yanlis": "pek çok", "ipucu": "Yazımına dikkat, genelde ayrı sanılır ama birleşik/ayrı kullanımına dikkat (pek çok ayrı yazılır, birçok bitişik). Doğrusu: pek çok / birçok."},
-    {"dogru": "unvan", "yanlis": " ünvan", "ipucu": "Başında 'u' değil 'ü' değil, direkt unvan."},
-    {"dogru": "hapishane", "yanlis": te "haphane", "ipucu": "Araya 'is' sesi girer."},
+    {"dogru": "hapishane", "yanlis": "haphane", "ipucu": "Araya 'is' sesi girer."},
     {"dogru": "karpuz", "yanlis": "kabruz", "ipucu": "Sıralamaya dikkat."},
     {"dogru": "komite", "yanlis": "komit", "ipucu": "Sonu -e ile biter."},
-    {"dogru": "unutkan", "yanlis": "unutgan", "ipucu": "Sert ünsüz uyumuna dikkat (-kan)."},
+    {"dogru": "unutkan", "yanlis": "unutgan", "ipucu": "Sert ünsüz uyumuna dikkat."},
     {"dogru": "özgün", "yanlis": "öçgün", "ipucu": "Özgün (orijinal anlamında)."},
     {"dogru": "esrar", "yanlis": "israr", "ipucu": "Israr (diretme), esrar (gizli şey) farklıdır."},
-    {"dogru": "kiprik", "yanlis": "kirpik", "ipucu": "Doğrusu 'kirpik'tir (p-r yer değiştirebilir tuzağına dikkat, kirpik düzdür)."},
+    {"dogru": "kirpik", "yanlis": "kiprik", "ipucu": "Doğrusu 'kirpik'tir."},
     {"dogru": "poğaça", "yanlis": "pohça", "ipucu": "Yumuşak g (ğ) içerir."},
     {"dogru": "savrulmak", "yanlis": "savurmak", "ipucu": "Araya 'l' harfi alır."},
     {"dogru": "şehrazat", "yanlis": "şehrizat", "ipucu": "Orta hecesi a ile."}
@@ -70,7 +68,6 @@ if baslat_btn:
     st.session_state.oyun_aktif = True
     st.session_state.dogru_sayisi = 0
     st.session_state.toplam_deneme = 0
-    # Her başlatmada tamamen rastgele yeni bir kelime seçilir
     st.session_state.aktif_kelime = random.choice(osym_kelimeler)
     st.rerun()
 
@@ -81,12 +78,10 @@ if st.session_state.oyun_aktif:
     
     kelime_datasi = st.session_state.aktif_kelime
     
-    # Coderspace tarzı büyük ve dikkat çekici yanlış gösterimi
     st.markdown(f"### Karıştırılan / Yanlış Hali:")
     st.error(f"## ❌ {kelime_datasi['yanlis'].upper()}")
     st.caption(f"💡 İpucu: {kelime_datasi['ipucu']}")
 
-    # Form kullanarak Enter tuşuna basıldığında hızlı akış sağlanması
     with st.form(key="hizli_yazma_formu", clear_on_submit=True):
         kullanici_girdisi = st.text_input("Kelimenin DOĞRU halini yazın ve Enter'a basın:", placeholder="Buraya yazıp enterla...")
         gonder = st.form_submit_button("Gönder / Sonraki")
@@ -99,11 +94,9 @@ if st.session_state.oyun_aktif:
             else:
                 st.warning(f"Yanlıştı! Doğrusu: **{kelime_datasi['dogru']}** olacaktı.")
             
-            # Her gönderimden sonra havuzdan rastgele başka bir kelime getir
             st.session_state.aktif_kelime = random.choice(osym_kelimeler)
             st.rerun()
 
-    # Skor Tablosu
     st.markdown("---")
     col_m1, col_m2 = st.columns(2)
     col_m1.metric("Toplam Kelime", st.session_state.toplam_deneme)
