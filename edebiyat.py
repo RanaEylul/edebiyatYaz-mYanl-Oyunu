@@ -1,114 +1,329 @@
-import streamlit as st
-import random
-
-# Sayfa Yapılandırması ve Coderspace Tarzı Koyu Tema Tasarımı
-st.set_page_config(
-    page_title="ÖSYM Yazım Pratiği - Coderspace",
-    page_icon="⌨️",
-    layout="wide"
-)
-
-# CSS ile Coderspace Benzeri Şık Tasarım
-st.markdown("""
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ÖSYM Yazım Hızı & Pratik Stüdyosu</title>
     <style>
-    .stApp {
-        background-color: #13111c;
-        color: #d1d0c5;
-    }
-    .kelime-alani {
-        font-family: 'Courier New', monospace;
-        font-size: 28px;
-        letter-spacing: 2px;
-        padding: 20px;
-        background-color: #1a1625;
-        border-radius: 12px;
-        border: 1px solid #2c2738;
-        margin-bottom: 20px;
-    }
+        body {
+            background-color: #13111c;
+            color: #646669;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 850px;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        /* Üst Menü & Süre Butonları */
+        .header-menu {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1a1625;
+            padding: 10px 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border: 1px solid #2c2738;
+        }
+
+        .time-modes button {
+            background: none;
+            border: none;
+            color: #646669;
+            font-family: inherit;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 5px 10px;
+            margin: 0 4px;
+            border-radius: 6px;
+            transition: 0.2s;
+        }
+
+        .time-modes button.active, .time-modes button:hover {
+            color: #e2b714;
+        }
+
+        /* İstatistik Kartları */
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: #1a1625;
+            padding: 15px 25px;
+            border-radius: 10px;
+            border: 1px solid #2c2738;
+            flex: 1;
+            text-align: left;
+        }
+
+        .stat-box .title {
+            font-size: 13px;
+            color: #646669;
+        }
+
+        .stat-box .value {
+            font-size: 28px;
+            color: #d1d0c5;
+            font-weight: bold;
+        }
+
+        /* Kelime Alanı (Coderspace Tarzı) */
+        .word-display {
+            font-size: 26px;
+            line-height: 1.8;
+            height: 140px;
+            overflow: hidden;
+            text-align: left;
+            position: relative;
+            background: #1a1625;
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid #2c2738;
+            user-select: none;
+        }
+
+        .word {
+            display: inline-block;
+            margin-right: 12px;
+            position: relative;
+        }
+
+        .letter {
+            border-bottom: 2px solid transparent;
+        }
+
+        .letter.correct {
+            color: #d1d0c5;
+        }
+
+        .letter.incorrect {
+            color: #ca4754;
+            border-bottom: 2px solid #ca4754;
+        }
+
+        /* Gizli Input (Klavyeden yazılanları yakalamak için) */
+        #hidden-input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Yeniden Başlat Butonu */
+        .restart-btn {
+            background: #2c2738;
+            border: none;
+            color: #d1d0c5;
+            padding: 10px 20px;
+            font-family: inherit;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 25px;
+            transition: 0.2s;
+        }
+
+        .restart-btn:hover {
+            background: #e2b714;
+            color: #13111c;
+        }
     </style>
-""", unsafe_allow_html=True)
+</head>
+<body onclick="document.getElementById('hidden-input').focus()">
 
-# ÖSYM'de Sıkça Karıştırılan Kelimelerin DOĞRU Halleri Havuzu
-osym_dogru_kelimeler = [
-    "yalnız", "yanlış", "herkes", "unvan", "orijinal", 
-    "kılavuz", "şoför", "stajyer", "laboratuvar", "doküman", 
-    "palyaço", "akaryakıt", "birdenbire", "birkaç", "hapishane", 
-    "karpuz", "komite", "unutkan", "özgün", "esrar", 
-    "kirpik", "poğaça", "savrulmak", "kolej", "dereotu", 
-    "başyapıt", "taşeron", "mütevazi", "akıbet", "özveri"
-]
+    <div class="container">
+        <!-- Üst Menü -->
+        <div class="header-menu">
+            <div style="color: #d1d0c5; font-weight: bold;">⚡ ÖSYM Yazım Hızı Pratiği</div>
+            <div class="time-modes">
+                <button onclick="setDuration(15)" id="btn-15">15 sn</button>
+                <button onclick="setDuration(30)" id="btn-30" class="active">30 sn</button>
+                <button onclick="setDuration(60)" id="btn-60">60 sn</button>
+                <button onclick="setDuration(120)" id="btn-120">120 sn</button>
+            </div>
+        </div>
 
-# Oturum Durumu Yönetimi
-if "oyun_basladi" not in st.session_state:
-    st.session_state.oyun_basladi = False
-if "secilen_sure" not in st.session_state:
-    st.session_state.secilen_sure = 30
-if "kelime_listesi" not in st.session_state:
-    st.session_state.kelime_listesi = []
+        <!-- İstatistikler -->
+        <div class="stats-bar">
+            <div class="stat-box">
+                <div class="title">Süre</div>
+                <div class="value" id="timer">30</div>
+            </div>
+            <div class="stat-box">
+                <div class="title">WPM (Hız)</div>
+                <div class="value" id="wpm">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="title">Doğruluk</div>
+                <div class="value" id="accuracy">100%</div>
+            </div>
+        </div>
 
-# Üst Menü / Kontrol Paneli (Coderspace Tarzı Süre ve Seçenekler)
-col1, col2, col3 = st.columns([3, 2, 2])
+        <!-- Kelime Havuzu Alanı -->
+        <div class="word-display" id="word-display"></div>
 
-with col1:
-    st.markdown("### ⌨️ ÖSYM Yazım & Hız Stüdyosu")
+        <!-- Görünmeyen Klavye Okuyucu -->
+        <input type="text" id="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
 
-with col2:
-    # Süre Seçimi (15sn, 30sn, 60sn, 120sn, 180sn)
-    sure_secenekleri = {15: "15 sn", 30: "30 sn", 60: "60 sn", 120: "120 sn", 180: "180 sn"}
-    secilen_key = st.selectbox(
-        "Süre Seçin:", 
-        options=list(sure_secenekleri.keys()), 
-        format_func=lambda x: sure_secenekleri[x],
-        index=1
-    )
-    st.session_state.secilen_sure = secilen_key
+        <br>
+        <button class="restart-btn" onclick="startGame()">🔄 Yeniden Başlat</button>
+    </div>
 
-with col3:
-    st.write("")
-    st.write("")
-    if st.button("🔄 Yeniden Başlat / Yeni Kelimeler"):
-        st.session_state.kelime_listesi = random.sample(osym_dogru_kelimeler, min(15, len(osym_dogru_kelimeler)))
-        st.session_state.oyun_basladi = True
-        st.rerun()
+    <script>
+        // ÖSYM'nin en çok karıştırılan kelimelerinin DOĞRU halleri
+        const osymWords = [
+            "yalnız", "yanlış", "herkes", "unvan", "orijinal", 
+            "kılavuz", "şoför", "stajyer", "laboratuvar", "doküman", 
+            "palyaço", "akaryakıt", "birdenbire", "birkaç", "hapishane", 
+            "karpuz", "komite", "unutkan", "özgün", "esrar", 
+            "kirpik", "poğaça", "savrulmak", "kolej", "dereotu", 
+            "başyapıt", "taşeron", "mütevazi", "akıbet", "özveri",
+            "tespit", "sezgi", "makine", "unutulmaz", "öngörü"
+        ];
 
-st.markdown("---")
+        let duration = 30;
+        let timeLeft = duration;
+        let timerInterval = null;
+        let isPlaying = false;
+        let words = [];
+        let wordIndex = 0;
+        let charIndex = 0;
+        let correctChars = 0;
+        let totalTypedChars = 0;
 
-# İlk açılışta veya liste boşsa kelimeleri doldur
-if not st.session_state.kelime_listesi:
-    st.session_state.kelime_listesi = random.sample(osym_dogru_kelimeler, min(15, len(osym_dogru_kelimeler)))
+        const wordDisplay = document.getElementById('word-display');
+        const hiddenInput = document.getElementById('hidden-input');
+        const timerDisplay = document.getElementById('timer');
+        const wpmDisplay = document.getElementById('wpm');
+        const accuracyDisplay = document.getElementById('accuracy');
 
-# Akacak Kelimeleri Ekrana Yazdırma (Coderspace Görünümü)
-metin_gosterimi = " &nbsp;&nbsp; ".join([f"`{k}`" for k in st.session_state.kelime_listesi])
-st.markdown(f"**Pratik Yapılacak ÖSYM Doğru Kelimeleri:**")
-st.markdown(f'<div class="kelime-alani">{metin_gosterimi}</div>', unsafe_allow_html=True)
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
 
-# Yazma ve Eşleştirme Alanı
-st.markdown("### Kelimeleri Sırayla Yazarak Pratik Yapın:")
+        function startGame() {
+            clearInterval(timerInterval);
+            isPlaying = false;
+            timeLeft = duration;
+            timerDisplay.innerText = timeLeft;
+            wpmDisplay.innerText = "0";
+            accuracyDisplay.innerText = "100%";
+            wordIndex = 0;
+            charIndex = 0;
+            correctChars = 0;
+            totalTypedChars = 0;
 
-with st.form(key="coderspace_form", clear_on_submit=True):
-    kullanici_girdisi = st.text_input("Yukarıdaki kelimeleri sırayla yazıp boşluk bırakın veya Enter'a basın:", placeholder="Yazmaya başla...")
-    submit_btn = st.form_submit_button("Kelimeyi Kontrol Et / İlerle")
+            words = shuffle([...osymWords]).slice(0, 30);
+            renderWords();
+            hiddenInput.value = "";
+            hiddenInput.focus();
+        }
 
-    if submit_btn and kullanici_girdisi:
-        girilen_kelimeler = kullanici_girdisi.strip().split()
-        dogru_bilinenler = 0
-        
-        for kelime in girilen_kelimeler:
-            if st.session_state.kelime_listesi and kelime == st.session_state.kelime_listesi[0]:
-                # Doğru bilinen kelimeyi listeden düş
-                st.session_state.kelime_listesi.pop(0)
-                dogru_bilinenler += 1
+        function renderWords() {
+            wordDisplay.innerHTML = "";
+            words.forEach((word, wIdx) => {
+                const wordSpan = document.createElement('span');
+                wordSpan.classList.add('word');
+                if (wIdx === wordIndex) wordSpan.style.borderBottom = "2px solid #e2b714";
 
-        # Eğer liste bittiyse yeni kelimeler yükle
-        if not st.session_state.kelime_listesi:
-            st.session_state.kelime_listesi = random.sample(osym_dogru_kelimeler, min(15, len(osym_dogru_kelimeler)))
-            st.success("🎉 Harika! Yeni ÖSYM kelime havuzu yüklendi, hız kesmeden devam et!")
-        else:
-            st.info(f"Son yazdıklarından {dogru_bilinenler} tanesi doğru eşleşti. Devam et!")
-        st.rerun()
+                for (let cIdx = 0; cIdx < word.length; cIdx++) {
+                    const letterSpan = document.createElement('span');
+                    letterSpan.classList.add('letter');
+                    letterSpan.innerText = word[cIdx];
+                    wordSpan.appendChild(letterSpan);
+                }
+                wordDisplay.appendChild(wordSpan);
+            });
+        }
 
-# İstatistik Alanı (Coderspace Skor Kartları Gibi)
-col_a, col_b, col_c = st.columns(3)
-col_a.metric("Seçilen Süre", f"{st.session_state.secilen_sure} Saniye")
-col_b.metric("Kalan Kelime Sayısı", len(st.session_state.kelime_listesi))
-col_c.metric("Mod", "ÖSYM Sınav Yazım Pratiği")
+        function setDuration(sec) {
+            duration = sec;
+            document.querySelectorAll('.time-modes button').forEach(b => b.classList.remove('active'));
+            document.getElementById(`btn-${sec}`).classList.add('active');
+            startGame();
+        }
+
+        hiddenInput.addEventListener('input', (e) => {
+            if (!isPlaying && timeLeft > 0) {
+                isPlaying = true;
+                timerInterval = setInterval(() => {
+                    timeLeft--;
+                    timerDisplay.innerText = timeLeft;
+                    updateStats();
+                    if (timeLeft <= 0) {
+                        clearInterval(timerInterval);
+                        isPlaying = false;
+                        hiddenInput.blur();
+                    }
+                }, 1000);
+            }
+
+            if (!isPlaying) return;
+
+            const inputVal = hiddenInput.value;
+            const currentWord = words[wordIndex];
+            const wordElements = wordDisplay.children[wordIndex].children;
+
+            totalTypedChars++;
+
+            // Boşluk tuşuna basıldıysa sonraki kelimeye geç
+            if (inputVal.endsWith(' ')) {
+                hiddenInput.value = "";
+                wordIndex++;
+                charIndex = 0;
+                if (wordIndex >= words.length) {
+                    words = shuffle([...osymWords]).slice(0, 20);
+                    wordIndex = 0;
+                }
+                renderWords();
+                return;
+            }
+
+            charIndex = inputVal.length;
+
+            for (let i = 0; i < currentWord.length; i++) {
+                if (i < charIndex) {
+                    if (inputVal[i] === currentWord[i]) {
+                        wordElements[i].classList.add('correct');
+                        wordElements[i].classList.remove('incorrect');
+                        correctChars++;
+                    } else {
+                        wordElements[i].classList.add('incorrect');
+                        wordElements[i].classList.remove('correct');
+                    }
+                } else {
+                    wordElements[i].classList.remove('correct', 'incorrect');
+                }
+            }
+            updateStats();
+        });
+
+        function updateStats() {
+            const timeElapsed = duration - timeLeft;
+            if (timeElapsed > 0) {
+                const wpm = Math.round((correctChars / 5) / (timeElapsed / 60));
+                wpmDisplay.innerText = wpm > 0 ? wpm : 0;
+            }
+            if (totalTypedChars > 0) {
+                const acc = Math.round((correctChars / totalTypedChars) * 100);
+                accuracyDisplay.innerText = `${acc}%`;
+            }
+        }
+
+        // Oyunu ilk açılışta başlat
+        startGame();
+    </script>
+</body>
+</html>
