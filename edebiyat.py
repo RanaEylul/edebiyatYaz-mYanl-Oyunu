@@ -3,12 +3,12 @@ import random
 
 # Sayfa Yapılandırması
 st.set_page_config(
-    page_title="ÖSYM Yazım Hızı Pratiği",
-    page_icon="⚡",
+    page_title="ÖSYM Doğru Kelime Yazma Stüdyosu",
+    page_icon="⌨️",
     layout="centered"
 )
 
-# ÖSYM'de Sıkça Karıştırılan Kelimelerin DOĞRU Halleri Havuzu
+# Sadece ÖSYM Kelimelerinin DOĞRU Halleri Havuzu
 osym_dogru_kelimeler = [
     "yalnız", "yanlış", "herkes", "unvan", "orijinal", 
     "kılavuz", "şoför", "stajyer", "laboratuvar", "doküman", 
@@ -18,50 +18,39 @@ osym_dogru_kelimeler = [
     "başyapıt", "taşeron", "mütevazi", "akıbet", "özveri"
 ]
 
-# Oturum Durumu Tanımlamaları
-if "kelime_listesi" not in st.session_state:
-    st.session_state.kelime_listesi = random.sample(osym_dogru_kelimeler, 10)
+# Oturum Durumu Başlatma
+if "hedef_kelime" not in st.session_state:
+    st.session_state.hedef_kelime = random.choice(osym_dogru_kelimeler)
 if "dogru_sayisi" not in st.session_state:
     st.session_state.dogru_sayisi = 0
 
-st.title("⚡ ÖSYM Yazım ve Hız Pratiği (.py)")
-st.markdown("Bu Python dosyası Streamlit altyapısıyla çalışır. Kelimelerin **doğru hallerini** sırayla yazarak hızını geliştir.")
+st.title("⌨️ ÖSYM Doğru Kelimeler - Yazma Çalışması")
+st.markdown("Aşağıda yazan kelimenin **doğru halini** kutuya yazarak klavye hızını ve kelime hafızanı geliştir.")
 
-# Süre Seçimi
-secilen_sure = st.selectbox("Süre Seçin:", [15, 30, 60, 120, 180], index=1)
-
-# Akacak Kelimeler
-st.markdown("### Pratik Yapılacak Kelimeler:")
-gosterim_metni = "  /  ".join(st.session_state.kelime_listesi)
-st.code(gosterim_metni, language="text")
+# Ekranda Gösterilecek Kelime (Doğru Hali)
+st.markdown("### Yazılacak Kelime:")
+st.markdown(f"<h1 style='color: #2ecc71; font-family: monospace;'>{st.session_state.hedef_kelime}</h1>", unsafe_allow_html=True)
 
 # Yazma Alanı
-with st.form(key="python_kod_formu", clear_on_submit=True):
-    kullanici_girdisi = st.text_input("Yukarıdaki kelimelerden sıradakini yazın:", placeholder="Buraya yazıp enterla...")
-    gonder_btn = st.form_submit_button("Kelimeyi Gönder")
+with st.form(key="yazma_formu", clear_on_submit=True):
+    kullanici_girdisi = st.text_input("Yukarıdaki kelimeyi birebir yazıp Enter'a bas:", placeholder="Buraya yaz...")
+    submit = st.form_submit_button("Gönder")
 
-    if gonder_btn and kullanici_girdisi:
-        hedef_kelime = st.session_state.kelime_listesi[0]
-        
-        if kullanici_girdisi.strip().lower() == hedef_kelime:
-            st.success(f"🎉 Harika! '{hedef_kelime}' doğru.")
+    if submit:
+        if kullanici_girdisi.strip().lower() == st.session_state.hedef_kelime:
+            st.success("Harika! Doğru yazdın 🎯")
             st.session_state.dogru_sayisi += 1
-            st.session_state.kelime_listesi.pop(0)
+            st.session_state.hedef_kelime = random.choice(osym_dogru_kelimeler)
+            st.rerun()
         else:
-            st.error(f"❌ Yanlış! Doğrusu **{hedef_kelime}** olacaktı.")
-            st.session_state.kelime_listesi.pop(0)
-
-        # Liste biterse yenile
-        if not st.session_state.kelime_listesi:
-            st.session_state.kelime_listesi = random.sample(osym_dogru_kelimeler, 10)
-            st.balloons()
-        
-        st.rerun()
+            st.error(f"Hatalı yazdın! Doğru yazılışı: **{st.session_state.hedef_kelime}**")
+            st.session_state.hedef_kelime = random.choice(osym_dogru_kelimeler)
+            st.rerun()
 
 st.markdown("---")
-st.metric("Doğru Bilinen Kelime", st.session_state.dogru_sayisi)
+st.metric("Toplam Doğru Yazılan Kelime", st.session_state.dogru_sayisi)
 
-if st.button("Listeyi Yenile / Sıfırla"):
-    st.session_state.kelime_listesi = random.sample(osym_dogru_kelimeler, 10)
+if st.button("Yeniden Başlat / Sıfırla"):
     st.session_state.dogru_sayisi = 0
+    st.session_state.hedef_kelime = random.choice(osym_dogru_kelimeler)
     st.rerun()
