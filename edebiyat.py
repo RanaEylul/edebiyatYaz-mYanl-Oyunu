@@ -1,110 +1,114 @@
 import streamlit as st
 import random
 
-# Sayfa Yapılandırması
+# Sayfa Yapılandırması ve Coderspace Tarzı Koyu Tema Tasarımı
 st.set_page_config(
-    page_title="ÖSYM Hız ve Yazım Pratiği (Coderspace Modu)",
-    page_icon="⚡",
-    layout="centered"
+    page_title="ÖSYM Yazım Pratiği - Coderspace",
+    page_icon="⌨️",
+    layout="wide"
 )
 
-# ÖSYM'de En Çok Çıkan / Karıştırılan Genişletilmiş Kelime Havuzu
-osym_kelimeler = [
-    {"dogru": "yalnız", "yanlis": "yanlız", "ipucu": "Yalın kelimesinden türemiştir."},
-    {"dogru": "yanlış", "yanlis": "yalnış", "ipucu": "Yanılmak kelimesinden türemiştir."},
-    {"dogru": "herkes", "yanlis": "herkez", "ipucu": "Sonsuz ünsüzlerden 's' ile biter."},
-    {"dogru": "unvan", "yanlis": "üvan", "ipucu": "Başında 'n' harfi vardır."},
-    {"dogru": "orijinal", "yanlis": "orjinal", "ipucu": "Araya 'i' harfi girer."},
-    {"dogru": "kılavuz", "yanlis": "klavuz", "ipucu": "Arasında 'ı' harfi bulunur."},
-    {"dogru": "şoför", "yanlis": "şöför", "ipucu": "Fransızcadan gelir, 'ö' ile yazılır."},
-    {"dogru": "stajyer", "yanlis": "stajor", "ipucu": "Sonu '-yer' ile biter."},
-    {"dogru": "laboratuvar", "yanlis": "laboratuar", "ipucu": "İçinde iki tane 'a' vardır."},
-    {"dogru": "doküman", "yanlis": "döküman", "ipucu": "İlk harf düzdür ('doküman')."},
-    {"dogru": "palyaço", "yanlis": "palyanço", "ipucu": "Doğrusu palyaçodur ('n' harfi yok)."},
-    {"dogru": "akaryakıt", "yanlis": "akar yakıt", "ipucu": "Bitişik yazılır."},
-    {"dogru": "birdenbire", "yanlis": "birden bire", "ipucu": "Bitişik yazılır."},
-    {"dogru": "birkaç", "yanlis": "bir kaç", "ipucu": "Bitişik yazılır."},
-    {"dogru": "hapishane", "yanlis": "haphane", "ipucu": "Araya 'is' sesi girer."},
-    {"dogru": "karpuz", "yanlis": "kabruz", "ipucu": "Sıralamaya dikkat."},
-    {"dogru": "komite", "yanlis": "komit", "ipucu": "Sonu -e ile biter."},
-    {"dogru": "unutkan", "yanlis": "unutgan", "ipucu": "Sert ünsüz uyumuna dikkat."},
-    {"dogru": "özgün", "yanlis": "öçgün", "ipucu": "Özgün (orijinal anlamında)."},
-    {"dogru": "esrar", "yanlis": "israr", "ipucu": "Israr (diretme), esrar (gizli şey) farklıdır."},
-    {"dogru": "kirpik", "yanlis": "kiprik", "ipucu": "Doğrusu 'kirpik'tir."},
-    {"dogru": "poğaça", "yanlis": "pohça", "ipucu": "Yumuşak g (ğ) içerir."},
-    {"dogru": "savrulmak", "yanlis": "savurmak", "ipucu": "Araya 'l' harfi alır."},
-    {"dogru": "şehrazat", "yanlis": "şehrizat", "ipucu": "Orta hecesi a ile."}
+# CSS ile Coderspace Benzeri Şık Tasarım
+st.markdown("""
+    <style>
+    .stApp {
+        background-color: #13111c;
+        color: #d1d0c5;
+    }
+    .kelime-alani {
+        font-family: 'Courier New', monospace;
+        font-size: 28px;
+        letter-spacing: 2px;
+        padding: 20px;
+        background-color: #1a1625;
+        border-radius: 12px;
+        border: 1px solid #2c2738;
+        margin-bottom: 20px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# ÖSYM'de Sıkça Karıştırılan Kelimelerin DOĞRU Halleri Havuzu
+osym_dogru_kelimeler = [
+    "yalnız", "yanlış", "herkes", "unvan", "orijinal", 
+    "kılavuz", "şoför", "stajyer", "laboratuvar", "doküman", 
+    "palyaço", "akaryakıt", "birdenbire", "birkaç", "hapishane", 
+    "karpuz", "komite", "unutkan", "özgün", "esrar", 
+    "kirpik", "poğaça", "savrulmak", "kolej", "dereotu", 
+    "başyapıt", "taşeron", "mütevazi", "akıbet", "özveri"
 ]
 
 # Oturum Durumu Yönetimi
-if "oyun_aktif" not in st.session_state:
-    st.session_state.oyun_aktif = False
-if "dogru_sayisi" not in st.session_state:
-    st.session_state.dogru_sayisi = 0
-if "toplam_deneme" not in st.session_state:
-    st.session_state.toplam_deneme = 0
-if "aktif_kelime" not in st.session_state:
-    st.session_state.aktif_kelime = random.choice(osym_kelimeler)
+if "oyun_basladi" not in st.session_state:
+    st.session_state.oyun_basladi = False
+if "secilen_sure" not in st.session_state:
+    st.session_state.secilen_sure = 30
+if "kelime_listesi" not in st.session_state:
+    st.session_state.kelime_listesi = []
 
-st.title("⚡ ÖSYM Yazım Hızı Pratiği (Coderspace Modu)")
-st.markdown("Süreye karşı yarışarak ÖSYM'nin en çok tuzağa düşürdüğü kelimelerin **doğru yazılışlarını** seri bir şekilde yaz.")
+# Üst Menü / Kontrol Paneli (Coderspace Tarzı Süre ve Seçenekler)
+col1, col2, col3 = st.columns([3, 2, 2])
 
-# --- KONTROL PANELİ (Süre Seçimi ve Başlatma) ---
-col_s1, col_s2 = st.columns([2, 1])
+with col1:
+    st.markdown("### ⌨️ ÖSYM Yazım & Hız Stüdyosu")
 
-with col_s1:
-    secilen_sure = st.selectbox(
-        "⏱️ Pratik Süresini Seçin (Saniye):",
-        [14, 30, 60, 120, 180],
-        index=1  # Varsayılan 30 saniye
+with col2:
+    # Süre Seçimi (15sn, 30sn, 60sn, 120sn, 180sn)
+    sure_secenekleri = {15: "15 sn", 30: "30 sn", 60: "60 sn", 120: "120 sn", 180: "180 sn"}
+    secilen_key = st.selectbox(
+        "Süre Seçin:", 
+        options=list(sure_secenekleri.keys()), 
+        format_func=lambda x: sure_secenekleri[x],
+        index=1
     )
+    st.session_state.secilen_sure = secilen_key
 
-with col_s2:
+with col3:
     st.write("")
     st.write("")
-    baslat_btn = st.button("🚀 Pratiği Başlat", type="primary")
-
-if baslat_btn:
-    st.session_state.oyun_aktif = True
-    st.session_state.dogru_sayisi = 0
-    st.session_state.toplam_deneme = 0
-    st.session_state.aktif_kelime = random.choice(osym_kelimeler)
-    st.rerun()
-
-# --- OYUN / PRATİK ALANI ---
-if st.session_state.oyun_aktif:
-    st.markdown("---")
-    st.info(f"Seçilen Süre: **{secilen_sure} Saniye** | Seri bir şekilde kelimelerin DOĞRU halini yazıp Enter'a bas!")
-    
-    kelime_datasi = st.session_state.aktif_kelime
-    
-    st.markdown(f"### Karıştırılan / Yanlış Hali:")
-    st.error(f"## ❌ {kelime_datasi['yanlis'].upper()}")
-    st.caption(f"💡 İpucu: {kelime_datasi['ipucu']}")
-
-    with st.form(key="hizli_yazma_formu", clear_on_submit=True):
-        kullanici_girdisi = st.text_input("Kelimenin DOĞRU halini yazın ve Enter'a basın:", placeholder="Buraya yazıp enterla...")
-        gonder = st.form_submit_button("Gönder / Sonraki")
-
-        if gonder:
-            st.session_state.toplam_deneme += 1
-            if kullanici_girdisi.strip().lower() == kelime_datasi["dogru"]:
-                st.session_state.dogru_sayisi += 1
-                st.success("Doğru! 🎯")
-            else:
-                st.warning(f"Yanlıştı! Doğrusu: **{kelime_datasi['dogru']}** olacaktı.")
-            
-            st.session_state.aktif_kelime = random.choice(osym_kelimeler)
-            st.rerun()
-
-    st.markdown("---")
-    col_m1, col_m2 = st.columns(2)
-    col_m1.metric("Toplam Kelime", st.session_state.toplam_deneme)
-    col_m2.metric("Doğru Bilinen", st.session_state.dogru_sayisi)
-
-    if st.button("Pratiği Bitir / Sıfırla"):
-        st.session_state.oyun_aktif = False
+    if st.button("🔄 Yeniden Başlat / Yeni Kelimeler"):
+        st.session_state.kelime_listesi = random.sample(osym_dogru_kelimeler, min(15, len(osym_dogru_kelimeler)))
+        st.session_state.oyun_basladi = True
         st.rerun()
-else:
-    st.markdown("---")
-    st.warning("Pratiğe başlamak için yukarıdan süreyi seçip **'Pratiği Başlat'** butonuna tıkla!")
+
+st.markdown("---")
+
+# İlk açılışta veya liste boşsa kelimeleri doldur
+if not st.session_state.kelime_listesi:
+    st.session_state.kelime_listesi = random.sample(osym_dogru_kelimeler, min(15, len(osym_dogru_kelimeler)))
+
+# Akacak Kelimeleri Ekrana Yazdırma (Coderspace Görünümü)
+metin_gosterimi = " &nbsp;&nbsp; ".join([f"`{k}`" for k in st.session_state.kelime_listesi])
+st.markdown(f"**Pratik Yapılacak ÖSYM Doğru Kelimeleri:**")
+st.markdown(f'<div class="kelime-alani">{metin_gosterimi}</div>', unsafe_allow_html=True)
+
+# Yazma ve Eşleştirme Alanı
+st.markdown("### Kelimeleri Sırayla Yazarak Pratik Yapın:")
+
+with st.form(key="coderspace_form", clear_on_submit=True):
+    kullanici_girdisi = st.text_input("Yukarıdaki kelimeleri sırayla yazıp boşluk bırakın veya Enter'a basın:", placeholder="Yazmaya başla...")
+    submit_btn = st.form_submit_button("Kelimeyi Kontrol Et / İlerle")
+
+    if submit_btn and kullanici_girdisi:
+        girilen_kelimeler = kullanici_girdisi.strip().split()
+        dogru_bilinenler = 0
+        
+        for kelime in girilen_kelimeler:
+            if st.session_state.kelime_listesi and kelime == st.session_state.kelime_listesi[0]:
+                # Doğru bilinen kelimeyi listeden düş
+                st.session_state.kelime_listesi.pop(0)
+                dogru_bilinenler += 1
+
+        # Eğer liste bittiyse yeni kelimeler yükle
+        if not st.session_state.kelime_listesi:
+            st.session_state.kelime_listesi = random.sample(osym_dogru_kelimeler, min(15, len(osym_dogru_kelimeler)))
+            st.success("🎉 Harika! Yeni ÖSYM kelime havuzu yüklendi, hız kesmeden devam et!")
+        else:
+            st.info(f"Son yazdıklarından {dogru_bilinenler} tanesi doğru eşleşti. Devam et!")
+        st.rerun()
+
+# İstatistik Alanı (Coderspace Skor Kartları Gibi)
+col_a, col_b, col_c = st.columns(3)
+col_a.metric("Seçilen Süre", f"{st.session_state.secilen_sure} Saniye")
+col_b.metric("Kalan Kelime Sayısı", len(st.session_state.kelime_listesi))
+col_c.metric("Mod", "ÖSYM Sınav Yazım Pratiği")
